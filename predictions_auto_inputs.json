@@ -1,0 +1,496 @@
+{
+  "predictions": [
+    0.584,
+    0.444,
+    0.509,
+    0.363,
+    0.418,
+    0.384,
+    0.354
+  ],
+  "inputs": [
+    {
+      "day_offset": 1,
+      "historical_window": [
+        {
+          "height": 0.543,
+          "precip": 1.2,
+          "station_onehot": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "height": 0.533,
+          "precip": 0.1,
+          "station_onehot": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "height": 0.52,
+          "precip": 0.6,
+          "station_onehot": [
+            0,
+            0,
+            0,
+            1
+          ]
+        }
+      ],
+      "future_block": {
+        "precip": 20.0,
+        "station_onehot": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "flat_input": [
+        0.543,
+        1.2,
+        0,
+        0,
+        0,
+        1,
+        0.533,
+        0.1,
+        0,
+        0,
+        0,
+        1,
+        0.52,
+        0.6,
+        0,
+        0,
+        0,
+        1,
+        20.0,
+        0,
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "day_offset": 2,
+      "historical_window": [
+        {
+          "height": 0.533,
+          "precip": 0.1,
+          "station_onehot": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "height": 0.52,
+          "precip": 0.6,
+          "station_onehot": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "height": 0.584,
+          "precip": 20.0,
+          "station_onehot": [
+            0,
+            0,
+            0,
+            1
+          ]
+        }
+      ],
+      "future_block": {
+        "precip": 2.1,
+        "station_onehot": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "flat_input": [
+        0.533,
+        0.1,
+        0,
+        0,
+        0,
+        1,
+        0.52,
+        0.6,
+        0,
+        0,
+        0,
+        1,
+        0.584,
+        20.0,
+        0,
+        0,
+        0,
+        1,
+        2.1,
+        0,
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "day_offset": 3,
+      "historical_window": [
+        {
+          "height": 0.52,
+          "precip": 0.6,
+          "station_onehot": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "height": 0.584,
+          "precip": 20.0,
+          "station_onehot": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "height": 0.444,
+          "precip": 2.1,
+          "station_onehot": [
+            0,
+            0,
+            0,
+            1
+          ]
+        }
+      ],
+      "future_block": {
+        "precip": 0.3,
+        "station_onehot": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "flat_input": [
+        0.52,
+        0.6,
+        0,
+        0,
+        0,
+        1,
+        0.584,
+        20.0,
+        0,
+        0,
+        0,
+        1,
+        0.444,
+        2.1,
+        0,
+        0,
+        0,
+        1,
+        0.3,
+        0,
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "day_offset": 4,
+      "historical_window": [
+        {
+          "height": 0.584,
+          "precip": 20.0,
+          "station_onehot": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "height": 0.444,
+          "precip": 2.1,
+          "station_onehot": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "height": 0.509,
+          "precip": 0.3,
+          "station_onehot": [
+            0,
+            0,
+            0,
+            1
+          ]
+        }
+      ],
+      "future_block": {
+        "precip": 0.0,
+        "station_onehot": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "flat_input": [
+        0.584,
+        20.0,
+        0,
+        0,
+        0,
+        1,
+        0.444,
+        2.1,
+        0,
+        0,
+        0,
+        1,
+        0.509,
+        0.3,
+        0,
+        0,
+        0,
+        1,
+        0.0,
+        0,
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "day_offset": 5,
+      "historical_window": [
+        {
+          "height": 0.444,
+          "precip": 2.1,
+          "station_onehot": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "height": 0.509,
+          "precip": 0.3,
+          "station_onehot": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "height": 0.363,
+          "precip": 0.0,
+          "station_onehot": [
+            0,
+            0,
+            0,
+            1
+          ]
+        }
+      ],
+      "future_block": {
+        "precip": 2.4,
+        "station_onehot": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "flat_input": [
+        0.444,
+        2.1,
+        0,
+        0,
+        0,
+        1,
+        0.509,
+        0.3,
+        0,
+        0,
+        0,
+        1,
+        0.363,
+        0.0,
+        0,
+        0,
+        0,
+        1,
+        2.4,
+        0,
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "day_offset": 6,
+      "historical_window": [
+        {
+          "height": 0.509,
+          "precip": 0.3,
+          "station_onehot": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "height": 0.363,
+          "precip": 0.0,
+          "station_onehot": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "height": 0.418,
+          "precip": 2.4,
+          "station_onehot": [
+            0,
+            0,
+            0,
+            1
+          ]
+        }
+      ],
+      "future_block": {
+        "precip": 7.799,
+        "station_onehot": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "flat_input": [
+        0.509,
+        0.3,
+        0,
+        0,
+        0,
+        1,
+        0.363,
+        0.0,
+        0,
+        0,
+        0,
+        1,
+        0.418,
+        2.4,
+        0,
+        0,
+        0,
+        1,
+        7.799,
+        0,
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "day_offset": 7,
+      "historical_window": [
+        {
+          "height": 0.363,
+          "precip": 0.0,
+          "station_onehot": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "height": 0.418,
+          "precip": 2.4,
+          "station_onehot": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "height": 0.384,
+          "precip": 7.799,
+          "station_onehot": [
+            0,
+            0,
+            0,
+            1
+          ]
+        }
+      ],
+      "future_block": {
+        "precip": 0.0,
+        "station_onehot": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "flat_input": [
+        0.363,
+        0.0,
+        0,
+        0,
+        0,
+        1,
+        0.418,
+        2.4,
+        0,
+        0,
+        0,
+        1,
+        0.384,
+        7.799,
+        0,
+        0,
+        0,
+        1,
+        0.0,
+        0,
+        0,
+        0,
+        1
+      ]
+    }
+  ]
+}
