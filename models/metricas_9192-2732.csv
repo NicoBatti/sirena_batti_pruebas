@@ -1,0 +1,2 @@
+rio_id,mae_test,rmse_test,best_window,best_arch,best_lr
+9192-2732,0.017731592110570946,0.028696157589633,5,"[32, 32, 32]",0.001

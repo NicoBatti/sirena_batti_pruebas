@@ -1,0 +1,2 @@
+rio_id,mae_test,rmse_test,best_window,best_arch,best_lr
+6746-2123,0.05651588705766142,0.0788785804317952,3,"[128, 64]",0.0001
