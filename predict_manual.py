@@ -507,7 +507,7 @@ def automatic_predict(model, scaler_X, scaler_y, window_size, forecast_horizon=7
 def main():
     cwd = os.path.dirname(__file__)
     global RETRY_COUNT, TIMEOUT, CACHE_DIR
-    model_path = os.path.join(cwd, 'modelo_final_optimizado.h5')
+    model_path = os.path.join(cwd, f'models/modelo_{series_id + '-' + site_code}.h5')
     scaler_X_path = os.path.join(cwd, 'scaler_X_final.pkl')
     scaler_y_path = os.path.join(cwd, 'scaler_y_final.pkl')
 
