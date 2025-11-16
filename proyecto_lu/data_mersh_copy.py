@@ -30,7 +30,6 @@ def get_climate_values(lat, lon, date):
 
     # ❗ Si no hay imágenes para esa fecha, devolvemos variables vacías
     if collection.size().getInfo() == 0:
-        print(f"⚠ No hay datos para {date} en ERA5. Se llena con None.")
         return {var: None for var in variables}
 
     image = collection.first()
@@ -73,7 +72,6 @@ for obj in inundaciones_data:
     
     # Primera fila: usa la primera fecha y obtiene datos climáticos
     primera_fecha = fechas[0]
-    print(f"📍 Procesando {obj['Departamento']}, {obj['Provincia']} | {primera_fecha}")
     
     climate = get_climate_values(obj['lat'], obj['lon'], primera_fecha)
     
@@ -84,17 +82,38 @@ for obj in inundaciones_data:
     }
     rows.append(primera_fila)
     
-    # Filas restantes: una por cada fecha restante con valores climáticos en None
+    # Filas restantes: una por cada fecha restante
+    # Para garantizar que la variable 'total_precipitation_sum' esté llena,
+    # hacemos la solicitud para esa fecha y guardamos solo ese feature en cada fila.
     for fecha in fechas[1:]:
-        fila_null = {
+        # solicitar solo para obtener total_precipitation_sum
+        climate_for_date = get_climate_values(obj['lat'], obj['lon'], fecha)
+        precip = climate_for_date.get('total_precipitation_sum') if climate_for_date else None
+        if precip is None:
+            # Si la API no devuelve precipitación, dejamos el valor vacío (None)
+            precip = None
+
+        fila = {
             **base_data,
             'fecha': fecha,
-            **{var: None for var in variables}
+            # Llenamos `total_precipitation_sum` y dejamos las demás variables como None
+            'total_precipitation_sum': precip,
         }
-        rows.append(fila_null)
+
+        # Asegurar que todas las variables estén presentes en la fila (si faltan, agregarlas con None)
+        for var in variables:
+            if var not in fila:
+                fila[var] = None
+
+        rows.append(fila)
 
 df_final = pd.DataFrame(rows)
 
-print(df_final)
+# Contar cuántas filas no tienen valor de precipitación (la API no devolvió nada)
+null_precip_count = df_final['total_precipitation_sum'].isna().sum() if 'total_precipitation_sum' in df_final.columns else 0
 
+# Guardar CSV
 df_final.to_csv("data_with_climate.csv", index=False)
+
+# Imprimir solo el resumen final: cuántas filas tienen precipitación nula
+print(f"Filas con 'total_precipitation_sum' nulo (API no devolvió): {null_precip_count}")
