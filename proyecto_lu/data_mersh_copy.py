@@ -5,7 +5,7 @@ import json
 ee.Initialize()
 
 # Cargar el archivo inundaciones.json
-with open('inundaciones.json', 'r', encoding='utf-8') as f:
+with open('inundaciones_unidas.json', 'r', encoding='utf-8') as f:
     inundaciones_data = json.load(f)
 
 # Variables a extraer
