@@ -1,6 +1,7 @@
 import ee
 import pandas as pd
 import json
+from datetime import datetime
 
 ee.Initialize()
 
@@ -48,72 +49,130 @@ def get_climate_values(lat, lon, date):
     return values
 
 
-# 🚀 Crear nuevo DataFrame con datos climáticos anexados
-rows = []
-
-for obj in inundaciones_data:
-    fechas = obj['fechas']
-    
+def _extract_base_data(obj):
     # Extraer todos los atributos excepto 'fechas'
-    base_data = {
-        'Date (YMD)': obj['Date (YMD)'],
-        'Provincia': obj['Provincia'],
-        'Code Provincia': obj['Code Provincia'],
-        'Departamento': obj['Departamento'],
-        'Code Departamento': obj['Code Departamento'],
-        'lat': obj['lat'],
-        'lon': obj['lon'],
-        'hayRioCercano': obj['hayRioCercano'],
-        'distanciaRio': obj['distanciaRio'],
-        'codeRio': obj['codeRio'],
-        'tipoDeSuelo': obj['tipoDeSuelo'],
-        'estacion': obj['estacion']
+    return {
+        'Date (YMD)': obj.get('Date (YMD)'),
+        'Provincia': obj.get('Provincia'),
+        'Code Provincia': obj.get('Code Provincia'),
+        'Departamento': obj.get('Departamento'),
+        'Code Departamento': obj.get('Code Departamento'),
+        'lat': obj.get('lat'),
+        'lon': obj.get('lon'),
+        'hayRioCercano': obj.get('hayRioCercano'),
+        'distanciaRio': obj.get('distanciaRio'),
+        'codeRio': obj.get('codeRio'),
+        'tipoDeSuelo': obj.get('tipoDeSuelo'),
+        'estacion': obj.get('estacion'),
+        'inundacion': obj.get('inundacion'),
     }
-    
-    # Primera fila: usa la primera fecha y obtiene datos climáticos
-    primera_fecha = fechas[0]
-    
-    climate = get_climate_values(obj['lat'], obj['lon'], primera_fecha)
-    
-    primera_fila = {
-        **base_data,
-        'fecha': primera_fecha,
-        **climate
-    }
-    rows.append(primera_fila)
-    
-    # Filas restantes: una por cada fecha restante
-    # Para garantizar que la variable 'total_precipitation_sum' esté llena,
-    # hacemos la solicitud para esa fecha y guardamos solo ese feature en cada fila.
-    for fecha in fechas[1:]:
-        # solicitar solo para obtener total_precipitation_sum
-        climate_for_date = get_climate_values(obj['lat'], obj['lon'], fecha)
-        precip = climate_for_date.get('total_precipitation_sum') if climate_for_date else None
-        if precip is None:
-            # Si la API no devuelve precipitación, dejamos el valor vacío (None)
-            precip = None
 
-        fila = {
+
+def _date_is_valid_and_after_threshold(date_str, threshold=datetime(1990, 1, 1)):
+    """Return True if date_str represents a date >= threshold. Handles common formats."""
+    if not date_str:
+        return False
+    try:
+        dt = pd.to_datetime(date_str, dayfirst=False, errors='coerce')
+        if pd.isna(dt):
+            return False
+        return dt >= threshold
+    except Exception:
+        return False
+
+
+def process_items(items, output_csv="data_with_climate.csv"):
+    """Procesa una lista de objetos (pre-filtrada) y escribe `output_csv`.
+
+    Esta función no imprime durante el procesamiento; al final escribe el CSV
+    y devuelve el conteo de filas con precipitación nula.
+    """
+    rows = []
+
+    for obj in items:
+        fechas = obj.get('fechas', [])
+        if not fechas:
+            continue
+
+        base_data = _extract_base_data(obj)
+
+        # Primera fila: usa la primera fecha y obtiene datos climáticos
+        primera_fecha = fechas[0]
+        climate = get_climate_values(obj.get('lat'), obj.get('lon'), primera_fecha)
+
+        primera_fila = {
             **base_data,
-            'fecha': fecha,
-            # Llenamos `total_precipitation_sum` y dejamos las demás variables como None
-            'total_precipitation_sum': precip,
+            'fecha': primera_fecha,
+            **(climate or {})
         }
+        rows.append(primera_fila)
 
-        # Asegurar que todas las variables estén presentes en la fila (si faltan, agregarlas con None)
-        for var in variables:
-            if var not in fila:
-                fila[var] = None
+        # Filas restantes: una por cada fecha restante
+        for fecha in fechas[1:]:
+            climate_for_date = get_climate_values(obj.get('lat'), obj.get('lon'), fecha)
+            precip = climate_for_date.get('total_precipitation_sum') if climate_for_date else None
 
-        rows.append(fila)
+            fila = {
+                **base_data,
+                'fecha': fecha,
+                'total_precipitation_sum': precip,
+            }
 
-df_final = pd.DataFrame(rows)
+            # Asegurar que todas las variables estén presentes en la fila
+            for var in variables:
+                if var not in fila:
+                    fila[var] = None
 
-# Contar cuántas filas no tienen valor de precipitación (la API no devolvió nada)
-null_precip_count = df_final['total_precipitation_sum'].isna().sum() if 'total_precipitation_sum' in df_final.columns else 0
+            rows.append(fila)
 
-# Guardar CSV
-df_final.to_csv("data_with_climate.csv", index=False)
+    df_final = pd.DataFrame(rows)
 
-# Imprimir solo el resumen final: cuántas filas tienen precipitación nula
-print(f"Filas con 'total_precipitation_sum' nulo (API no devolvió): {null_precip_count}")
+    # Contar cuántas filas no tienen valor de precipitación (la API no devolvió nada)
+    null_precip_count = df_final['total_precipitation_sum'].isna().sum() if 'total_precipitation_sum' in df_final.columns else 0
+
+    # Guardar CSV
+    df_final.to_csv(output_csv, index=False)
+
+    return null_precip_count
+
+
+def get_filtered_items(min_date_str='1990-01-01'):
+    """Devuelve los objetos de `inundaciones_data` cuyo `Date (YMD)` >= min_date_str."""
+    threshold = pd.to_datetime(min_date_str)
+    filtered = []
+    for obj in inundaciones_data:
+        date_value = obj.get('Date (YMD)')
+        if _date_is_valid_and_after_threshold(date_value, threshold):
+            filtered.append(obj)
+    return filtered
+
+
+def run_preview(n=10, min_date_str='1990-01-01'):
+    """Procesa solo las primeras `n` filas válidas (tras el filtrado por fecha).
+
+    Guarda el CSV de prueba en `data_with_climate_preview.csv` y devuelve el conteo
+    de filas con precipitación nula.
+    """
+    items = get_filtered_items(min_date_str=min_date_str)
+    items_preview = items[:n]
+    out_csv = "data_with_climate_preview.csv"
+    nulls = process_items(items_preview, output_csv=out_csv)
+    print(f"Preview escrito en {out_csv}. Filas con 'total_precipitation_sum' nulo: {nulls}")
+    return nulls
+
+
+def run_full(min_date_str='1990-01-01'):
+    """Procesa todos los objetos válidos y guarda `data_with_climate.csv`.
+
+    Devuelve el conteo de filas con precipitación nula.
+    """
+    items = get_filtered_items(min_date_str=min_date_str)
+    out_csv = "data_with_climate.csv"
+    nulls = process_items(items, output_csv=out_csv)
+    print(f"Salida completa escrita en {out_csv}. Filas con 'total_precipitation_sum' nulo: {nulls}")
+    return nulls
+
+
+# Nota: no ejecutamos `run_full()` automáticamente para evitar llamadas pesadas.
+# Uso recomendado (PowerShell):
+# python -c "from proyecto_lu import data_mersh_copy as dm; dm.run_preview(10)"
