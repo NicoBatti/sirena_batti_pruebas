@@ -1,9 +1,16 @@
 import ee
 import pandas as pd
 import json
+import time
+import sys
+import argparse
 from datetime import datetime
 
-ee.Initialize()
+try:
+    ee.Initialize()
+except Exception as e:
+    # No fallamos aquí porque el usuario puede no tener credenciales; informamos claramente.
+    print("Advertencia: ee.Initialize() falló. Asegurate de haber autenticado Earth Engine. Error:", e)
 
 # Cargar el archivo inundaciones.json
 with open('inundaciones_unidas.json', 'r', encoding='utf-8') as f:
@@ -21,32 +28,49 @@ variables = [
 def get_climate_values(lat, lon, date):
     """Solicita ERA5 solo si hay datos para ese día."""
     
+    # Construir point y collection
     point = ee.Geometry.Point(float(lon), float(lat))  # lon, lat
-
     collection = (
         ee.ImageCollection("ECMWF/ERA5_LAND/DAILY_AGGR")
         .filterDate(date, ee.Date(date).advance(1, 'day'))  # rango de 24 h
         .select(variables)
     )
 
-    # ❗ Si no hay imágenes para esa fecha, devolvemos variables vacías
-    if collection.size().getInfo() == 0:
-        return {var: None for var in variables}
+    # Reintentos porque getInfo() puede fallar o retrasarse
+    max_retries = 3
+    delay = 1.0
+    last_exc = None
+    for attempt in range(1, max_retries + 1):
+        try:
+            # si no hay imágenes para esa fecha, devolvemos variables vacías
+            size = collection.size().getInfo()
+            if size == 0:
+                return {var: None for var in variables}
 
-    image = collection.first()
+            image = collection.first()
+            values = image.reduceRegion(
+                reducer=ee.Reducer.mean(),
+                geometry=point,
+                scale=1000
+            ).getInfo()
 
-    values = image.reduceRegion(
-        reducer=ee.Reducer.mean(),
-        geometry=point,
-        scale=1000
-    ).getInfo()
+            if not isinstance(values, dict):
+                return {var: None for var in variables}
 
-    # Si una variable falta → None
-    for v in variables:
-        if v not in values:
-            values[v] = None
+            # Asegurar que todas las variables estén presentes
+            for v in variables:
+                if v not in values:
+                    values[v] = None
 
-    return values
+            return values
+        except Exception as ex:
+            last_exc = ex
+            print(f"Warning: fallo al obtener datos ERA5 para ({lat},{lon}) {date} (intento {attempt}/{max_retries}): {ex}")
+            time.sleep(delay)
+            delay *= 2
+
+    print(f"Error persistente obteniendo ERA5 para ({lat},{lon}) {date}: {last_exc}")
+    return {var: None for var in variables}
 
 
 def _extract_base_data(obj):
@@ -89,7 +113,10 @@ def process_items(items, output_csv="data_with_climate.csv"):
     """
     rows = []
 
-    for obj in items:
+    total = len(items)
+    for idx, obj in enumerate(items, start=1):
+        if idx % 50 == 0 or idx == 1:
+            print(f"Procesando objeto {idx}/{total}...")
         fechas = obj.get('fechas', [])
         if not fechas:
             continue
@@ -98,7 +125,11 @@ def process_items(items, output_csv="data_with_climate.csv"):
 
         # Primera fila: usa la primera fecha y obtiene datos climáticos
         primera_fecha = fechas[0]
-        climate = get_climate_values(obj.get('lat'), obj.get('lon'), primera_fecha)
+        try:
+            climate = get_climate_values(obj.get('lat'), obj.get('lon'), primera_fecha)
+        except Exception as e:
+            print(f"Error obteniendo clima para primera fecha {primera_fecha} del objeto {idx}: {e}")
+            climate = {v: None for v in variables}
 
         primera_fila = {
             **base_data,
@@ -109,13 +140,18 @@ def process_items(items, output_csv="data_with_climate.csv"):
 
         # Filas restantes: una por cada fecha restante
         for fecha in fechas[1:]:
-            climate_for_date = get_climate_values(obj.get('lat'), obj.get('lon'), fecha)
+            try:
+                climate_for_date = get_climate_values(obj.get('lat'), obj.get('lon'), fecha)
+            except Exception as e:
+                print(f"Error obteniendo clima para fecha {fecha} del objeto {idx}: {e}")
+                climate_for_date = {v: None for v in variables}
+
             precip = climate_for_date.get('total_precipitation_sum') if climate_for_date else None
 
             fila = {
                 **base_data,
                 'fecha': fecha,
-                'total_precipitation_sum': precip,
+                **(climate_for_date or {})
             }
 
             # Asegurar que todas las variables estén presentes en la fila
@@ -171,6 +207,23 @@ def run_full(min_date_str='1990-01-01'):
     nulls = process_items(items, output_csv=out_csv)
     print(f"Salida completa escrita en {out_csv}. Filas con 'total_precipitation_sum' nulo: {nulls}")
     return nulls
+
+
+def cli_main():
+    parser = argparse.ArgumentParser(description='Generar CSV de inundaciones con datos ERA5 por fecha.')
+    parser.add_argument('--mode', choices=['preview', 'full'], default='preview', help='preview (rápido) o full (completo)')
+    parser.add_argument('-n', type=int, default=10, help='Número de objetos a procesar en preview')
+    parser.add_argument('--min-date', default='1990-01-01', help='Fecha mínima (inclusive) para filtrar objetos')
+    args = parser.parse_args()
+
+    if args.mode == 'preview':
+        run_preview(n=args.n, min_date_str=args.min_date)
+    else:
+        run_full(min_date_str=args.min_date)
+
+
+if __name__ == '__main__':
+    cli_main()
 
 
 # Nota: no ejecutamos `run_full()` automáticamente para evitar llamadas pesadas.
