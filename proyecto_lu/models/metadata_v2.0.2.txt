@@ -1,0 +1,8 @@
+Model Version: v2.0.2
+Training Date: 2025-11-22 14:13:11.332994
+Features: 26
+Training Samples: 4424
+Test Samples: 1107
+Test F2-Score: 0.8581
+Test Recall: 0.9744
+Test Precision: 0.5808
